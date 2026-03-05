@@ -1,0 +1,361 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700&display=swap');
+
+/* ===========================
+   VARIABEL — sama persis kayak style.css
+   biar tema konsisten di semua halaman
+=========================== */
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #0f0f1a;
+  --bg-card: #111120;
+  --bg-card-hover: #161628;
+  --accent-green: #00e676;
+  --accent-green-dim: #00b85a;
+  --accent-green-glow: rgba(0, 230, 118, 0.15);
+  --border-color: #1e1e35;
+  --text-primary: #f0f0ff;
+  --text-secondary: #8888aa;
+  --text-muted: #555570;
+}
+
+/* ===========================
+   RESET & BASE
+=========================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+  background-image:
+    linear-gradient(rgba(0, 230, 118, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 230, 118, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ===========================
+   HEADER / NAVBAR
+=========================== */
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+  height: 64px;
+  background: rgba(10, 10, 15, 0.95);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 var(--accent-green-dim), 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.logo {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.logo span {
+  color: var(--accent-green);
+}
+
+.main-header nav a {
+  margin-left: 20px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.main-header nav a:hover {
+  color: var(--accent-green);
+}
+
+/* ===========================
+   LAYOUT WRAPPER — 2 KOLOM
+=========================== */
+.order-wrapper {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  max-width: 1100px;
+  margin: 40px auto;
+  gap: 24px;
+  padding: 0 40px;
+}
+
+/* ===========================
+   PANEL KIRI — Info Game
+=========================== */
+.order-left {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  /* Sudut lancip kiri bawah */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+  padding: 28px 24px;
+  height: fit-content;
+  position: sticky;
+  top: 88px;
+}
+
+.game-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  /* Sudut lancip di logo juga */
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  margin-bottom: 16px;
+  display: block;
+}
+
+.game-info h2 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.publisher {
+  font-size: 12px;
+  color: var(--accent-green);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+/* Divider tipis */
+.game-info::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: var(--border-color);
+  margin: 20px 0;
+}
+
+.desc {
+  list-style: none;
+  padding: 0;
+}
+
+.desc li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desc li:last-child {
+  border-bottom: none;
+}
+
+/* ===========================
+   PANEL KANAN — Form Order
+=========================== */
+.order-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Card step */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 20px 24px;
+  /* Sudut lancip kanan atas */
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  transition: border-color 0.2s;
+}
+
+.card:focus-within {
+  border-color: var(--accent-green-dim);
+}
+
+/* Judul step — "1 Masukkan User ID" */
+.card h3 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Angka step — kotak kecil hijau */
+.card h3 span {
+  background: var(--accent-green);
+  color: #000;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Sudut lancip di badge angka */
+  clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+  flex-shrink: 0;
+}
+
+/* Input field */
+input[type="text"] {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0;
+  color: var(--text-primary);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  /* Sudut lancip di input */
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+}
+
+input[type="text"]::placeholder {
+  color: var(--text-muted);
+}
+
+input[type="text"]:focus {
+  border-color: var(--accent-green-dim);
+}
+
+/* ===========================
+   NOMINAL LIST — Grid Paket
+=========================== */
+.nominal-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.nominal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 12px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  /* Sudut lancip di setiap nominal */
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  position: relative;
+}
+
+.nominal strong {
+  display: block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.nominal span,
+.nominal br + * {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.nominal:hover {
+  border-color: var(--accent-green-dim);
+  background: var(--bg-card-hover);
+}
+
+/* State terpilih */
+.nominal.active {
+  border-color: var(--accent-green);
+  background: rgba(0, 230, 118, 0.08);
+}
+
+/* Checkmark kecil di pojok kalau aktif */
+.nominal.active::after {
+  content: '✓';
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 10px;
+  color: var(--accent-green);
+  font-weight: bold;
+}
+
+/* ===========================
+   TOMBOL BELI
+=========================== */
+#orderBtn {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent-green);
+  border: none;
+  color: #000;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* Sudut lancip tombol */
+  clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+#orderBtn:hover {
+  background: #00ff88;
+  letter-spacing: 4px;
+}
+
+#orderBtn:active {
+  transform: scale(0.98);
+}
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+@media (max-width: 768px) {
+  .main-header {
+    padding: 0 20px;
+  }
+
+  .order-wrapper {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+    margin: 20px auto;
+  }
+
+  .order-left {
+    position: static;
+    clip-path: none;
+  }
+
+  .nominal-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
