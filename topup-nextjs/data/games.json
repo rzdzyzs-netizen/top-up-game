@@ -94,7 +94,7 @@
     "slug": "ff",
     "name": "Free Fire",
     "publisher": "Garena",
-    "image": "/images/ff.jpg",
+    "image": "/images/ff.png",
     "currency": "Diamond",
     "nominals": [
       { "label": "70 Diamond", "price": 16000 },
