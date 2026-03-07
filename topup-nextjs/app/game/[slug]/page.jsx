@@ -21,6 +21,12 @@ export default function GamePage({ params }) {
   const [focusedInput, setFocusedInput] = useState(null);
   const [copied, setCopied] = useState(null);
 
+  // Voucher states
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherData, setVoucherData] = useState(null);
+  const [voucherError, setVoucherError] = useState("");
+
   if (!game) return (
     <div style={{ minHeight: "100vh", background: "#0a0a0f", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
       <div style={{ textAlign: "center" }}>
@@ -31,10 +37,65 @@ export default function GamePage({ params }) {
     </div>
   );
 
+  const finalPrice = voucherData ? voucherData.finalPrice : selected?.price || 0;
+  const discountAmount = voucherData ? voucherData.discountAmount : 0;
+
   const copyText = (text, key) => {
     navigator.clipboard.writeText(text);
     setCopied(key);
     setTimeout(() => setCopied(null), 2000);
+  };
+
+  const handleApplyVoucher = async () => {
+    if (!selected) { setVoucherError("Pilih paket dulu sebelum pakai voucher!"); return; }
+    if (!voucherCode.trim()) { setVoucherError("Masukkan kode voucher dulu!"); return; }
+    setVoucherLoading(true);
+    setVoucherError("");
+    setVoucherData(null);
+
+    try {
+      const res = await fetch("/api/voucher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: voucherCode, price: selected.price }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setVoucherData(data);
+      } else {
+        setVoucherError(data.message);
+      }
+    } catch {
+      setVoucherError("Gagal memverifikasi voucher");
+    }
+    setVoucherLoading(false);
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherData(null);
+    setVoucherCode("");
+    setVoucherError("");
+  };
+
+  const sendWANotification = async (orderId) => {
+    try {
+      await fetch("/api/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          whatsapp,
+          orderId,
+          game: game.name,
+          packageName: selected.label,
+          price: selected.price,
+          finalPrice,
+          userId,
+          discount: voucherData?.discount || 0,
+        }),
+      });
+    } catch (err) {
+      console.error("WA notif gagal:", err);
+    }
   };
 
   const handleBayar = async () => {
@@ -50,19 +111,21 @@ export default function GamePage({ params }) {
       const res = await fetch("/api/midtrans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: id, amount: selected.price, game: game.name, userId, packageName: selected.label }),
+        body: JSON.stringify({ orderId: id, amount: finalPrice, game: game.name, userId, packageName: selected.label }),
       });
       const data = await res.json();
 
       if (data.token) {
         await supabase.from("order").insert([{
           order_id: id, game: game.name, user_id: userId, package: selected.label,
-          price: selected.price, method: selectedMethod, status: "pending", whatsapp
+          price: finalPrice, method: selectedMethod, status: "pending", whatsapp,
+          voucher: voucherData?.code || null, discount: voucherData?.discount || 0,
         }]);
 
         window.snap.pay(data.token, {
           onSuccess: async () => {
             await supabase.from("order").update({ status: "success" }).eq("order_id", id);
+            await sendWANotification(id);
             setOrderId(id); setSuccess(true);
           },
           onPending: () => { setOrderId(id); setStep(2); },
@@ -76,6 +139,7 @@ export default function GamePage({ params }) {
 
   const handleSudahBayar = async () => {
     await supabase.from("order").update({ status: "success" }).eq("order_id", orderId);
+    await sendWANotification(orderId);
     setSuccess(true);
   };
 
@@ -166,14 +230,12 @@ export default function GamePage({ params }) {
               {steps.map((s, i) => (
                 <div key={s} style={{ display: "flex", alignItems: "center" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
-                    <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: i === 0 ? "#00e676" : "#111120", border: `2px solid ${i === 0 ? "#00e676" : "#1a1a2e"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700", color: i === 0 ? "#000" : "#333355", transition: "all 0.3s" }}>
+                    <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: i === 0 ? "#00e676" : "#111120", border: `2px solid ${i === 0 ? "#00e676" : "#1a1a2e"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700", color: i === 0 ? "#000" : "#333355" }}>
                       {i + 1}
                     </div>
                     <span style={{ fontSize: "10px", color: i === 0 ? "#00e676" : "#333355", letterSpacing: "1px", whiteSpace: "nowrap" }}>{s}</span>
                   </div>
-                  {i < steps.length - 1 && (
-                    <div style={{ width: "50px", height: "1px", background: "#1a1a2e", margin: "0 6px", marginBottom: "18px" }} />
-                  )}
+                  {i < steps.length - 1 && <div style={{ width: "50px", height: "1px", background: "#1a1a2e", margin: "0 6px", marginBottom: "18px" }} />}
                 </div>
               ))}
             </div>
@@ -189,31 +251,21 @@ export default function GamePage({ params }) {
                 <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
                   <div>
                     <label style={{ fontSize: "11px", color: "#555570", letterSpacing: "1px", display: "block", marginBottom: "8px" }}>USER ID {game.name.toUpperCase()}</label>
-                    <input
-                      type="text"
-                      value={userId}
-                      onChange={(e) => setUserId(e.target.value)}
-                      onFocus={() => setFocusedInput("userId")}
-                      onBlur={() => setFocusedInput(null)}
+                    <input type="text" value={userId} onChange={(e) => setUserId(e.target.value)}
+                      onFocus={() => setFocusedInput("userId")} onBlur={() => setFocusedInput(null)}
                       placeholder={`Masukkan User ID ${game.name}`}
-                      style={{ ...inputBase, borderColor: focusedInput === "userId" ? "#00e676" : userId ? "rgba(0,230,118,0.3)" : "#1a1a2e" }}
-                    />
+                      style={{ ...inputBase, borderColor: focusedInput === "userId" ? "#00e676" : userId ? "rgba(0,230,118,0.3)" : "#1a1a2e" }} />
                   </div>
                   <div>
                     <label style={{ fontSize: "11px", color: "#555570", letterSpacing: "1px", display: "block", marginBottom: "8px" }}>NOMOR WHATSAPP</label>
                     <div style={{ position: "relative" }}>
                       <div style={{ position: "absolute", left: "1px", top: "1px", bottom: "1px", display: "flex", alignItems: "center", padding: "0 14px", background: "#0d0d1c", borderRight: "1px solid #1a1a2e", color: "#555570", fontSize: "13px", borderRadius: "4px 0 0 4px", zIndex: 1 }}>+62</div>
-                      <input
-                        type="tel"
-                        value={whatsapp}
-                        onChange={(e) => setWhatsapp(e.target.value)}
-                        onFocus={() => setFocusedInput("wa")}
-                        onBlur={() => setFocusedInput(null)}
+                      <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)}
+                        onFocus={() => setFocusedInput("wa")} onBlur={() => setFocusedInput(null)}
                         placeholder="8123456789"
-                        style={{ ...inputBase, paddingLeft: "62px", borderColor: focusedInput === "wa" ? "#00e676" : whatsapp ? "rgba(0,230,118,0.3)" : "#1a1a2e" }}
-                      />
+                        style={{ ...inputBase, paddingLeft: "62px", borderColor: focusedInput === "wa" ? "#00e676" : whatsapp ? "rgba(0,230,118,0.3)" : "#1a1a2e" }} />
                     </div>
-                    <p style={{ fontSize: "11px", color: "#333355", marginTop: "6px" }}>📱 Konfirmasi pesanan dikirim ke nomor ini</p>
+                    <p style={{ fontSize: "11px", color: "#333355", marginTop: "6px" }}>📱 Notifikasi otomatis akan dikirim ke WA ini setelah bayar</p>
                   </div>
                 </div>
               </div>
@@ -230,7 +282,7 @@ export default function GamePage({ params }) {
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "8px" }}>
                     {game.nominals.map((n, i) => (
-                      <div key={i} onClick={() => setSelected(n)}
+                      <div key={i} onClick={() => { setSelected(n); setVoucherData(null); setVoucherError(""); setVoucherCode(""); }}
                         style={{ padding: "14px 12px", border: selected?.label === n.label ? "1px solid #00e676" : "1px solid #1a1a2e", background: selected?.label === n.label ? "rgba(0,230,118,0.08)" : "#0d0d1c", cursor: "pointer", transition: "all 0.18s", borderRadius: "6px", position: "relative", overflow: "hidden" }}
                         onMouseEnter={e => { if (selected?.label !== n.label) { e.currentTarget.style.borderColor = "rgba(0,230,118,0.4)"; e.currentTarget.style.background = "rgba(0,230,118,0.03)"; } }}
                         onMouseLeave={e => { if (selected?.label !== n.label) { e.currentTarget.style.borderColor = "#1a1a2e"; e.currentTarget.style.background = "#0d0d1c"; } }}
@@ -246,14 +298,65 @@ export default function GamePage({ params }) {
                 </div>
               </div>
 
-              {/* SECTION 3 - METODE BAYAR */}
+              {/* SECTION 3 - VOUCHER */}
+              <div style={{ background: "#111120", border: voucherData ? "1px solid rgba(0,230,118,0.4)" : "1px solid #1a1a2e", borderRadius: "8px", overflow: "hidden", transition: "border-color 0.3s" }}>
+                <div style={{ padding: "14px 20px", borderBottom: "1px solid #1a1a2e", display: "flex", alignItems: "center", justifyContent: "space-between", background: voucherData ? "rgba(0,230,118,0.04)" : "rgba(0,230,118,0.02)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(0,230,118,0.15)", border: "1px solid rgba(0,230,118,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", flexShrink: 0 }}>🎟️</div>
+                    <p style={{ fontSize: "12px", letterSpacing: "2px", textTransform: "uppercase", color: "#aaaacc", fontWeight: "600" }}>Kode Voucher</p>
+                  </div>
+                  <span style={{ fontSize: "10px", color: "#555570", background: "#0d0d1c", padding: "2px 8px", borderRadius: "10px", border: "1px solid #1a1a2e" }}>OPSIONAL</span>
+                </div>
+                <div style={{ padding: "16px 20px" }}>
+                  {!voucherData ? (
+                    <>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <input
+                          type="text"
+                          value={voucherCode}
+                          onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError(""); }}
+                          onFocus={() => setFocusedInput("voucher")}
+                          onBlur={() => setFocusedInput(null)}
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyVoucher()}
+                          placeholder="Masukkan kode voucher..."
+                          style={{ ...inputBase, borderColor: focusedInput === "voucher" ? "#00e676" : voucherError ? "rgba(255,68,68,0.5)" : "#1a1a2e", letterSpacing: "2px", fontFamily: "monospace", textTransform: "uppercase" }}
+                        />
+                        <button onClick={handleApplyVoucher} disabled={voucherLoading || !voucherCode.trim()}
+                          style={{ padding: "0 20px", background: voucherCode.trim() ? "rgba(0,230,118,0.15)" : "#0d0d1c", border: `1px solid ${voucherCode.trim() ? "#00e676" : "#1a1a2e"}`, color: voucherCode.trim() ? "#00e676" : "#333355", fontSize: "12px", fontWeight: "700", cursor: voucherCode.trim() ? "pointer" : "not-allowed", borderRadius: "4px", whiteSpace: "nowrap", letterSpacing: "1px", transition: "all 0.2s", flexShrink: 0 }}>
+                          {voucherLoading ? "..." : "PAKAI"}
+                        </button>
+                      </div>
+                      {voucherError && (
+                        <p style={{ fontSize: "12px", color: "#ff4444", marginTop: "8px" }}>❌ {voucherError}</p>
+                      )}
+                      <p style={{ fontSize: "11px", color: "#333355", marginTop: "8px" }}>💡 Punya kode voucher? Masukkan di sini untuk dapat diskon</p>
+                    </>
+                  ) : (
+                    <div style={{ background: "rgba(0,230,118,0.06)", border: "1px solid rgba(0,230,118,0.25)", borderRadius: "6px", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                          <span style={{ fontSize: "13px", fontWeight: "800", color: "#00e676", letterSpacing: "2px", fontFamily: "monospace" }}>{voucherData.code}</span>
+                          <span style={{ fontSize: "10px", color: "#00e676", background: "rgba(0,230,118,0.15)", padding: "1px 8px", borderRadius: "10px" }}>-{voucherData.discount}%</span>
+                        </div>
+                        <p style={{ fontSize: "12px", color: "#888899" }}>{voucherData.description}</p>
+                        <p style={{ fontSize: "13px", color: "#00e676", fontWeight: "700", marginTop: "4px" }}>Hemat Rp {voucherData.discountAmount.toLocaleString("id-ID")}</p>
+                      </div>
+                      <button onClick={handleRemoveVoucher}
+                        style={{ background: "transparent", border: "1px solid rgba(255,68,68,0.3)", color: "#ff6666", padding: "6px 12px", fontSize: "11px", cursor: "pointer", borderRadius: "4px", flexShrink: 0 }}>
+                        Hapus
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* SECTION 4 - METODE BAYAR */}
               <div style={{ background: "#111120", border: "1px solid #1a1a2e", borderRadius: "8px", overflow: "hidden" }}>
                 <div style={{ padding: "14px 20px", borderBottom: "1px solid #1a1a2e", display: "flex", alignItems: "center", gap: "10px", background: "rgba(0,230,118,0.02)" }}>
                   <div style={{ width: "24px", height: "24px", borderRadius: "50%", background: "rgba(0,230,118,0.15)", border: "1px solid rgba(0,230,118,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "700", color: "#00e676", flexShrink: 0 }}>3</div>
                   <p style={{ fontSize: "12px", letterSpacing: "2px", textTransform: "uppercase", color: "#aaaacc", fontWeight: "600" }}>Metode Pembayaran</p>
                 </div>
                 <div style={{ padding: "16px 20px" }}>
-
                   <p style={{ fontSize: "10px", color: "#333355", letterSpacing: "2px", marginBottom: "8px", fontWeight: "600" }}>QRIS</p>
                   {methods.filter(m => m.id === "QRIS").map(m => (
                     <div key={m.id} onClick={() => setSelectedMethod(m.id)}
@@ -321,18 +424,27 @@ export default function GamePage({ params }) {
                 </div>
                 <span style={{ fontSize: "11px", color: "#ffaa00", background: "rgba(255,170,0,0.1)", border: "1px solid rgba(255,170,0,0.25)", padding: "6px 14px", borderRadius: "20px" }}>⏳ Menunggu</span>
               </div>
-              <div style={{ background: "#0d0d1c", border: "1px solid #1a1a2e", borderRadius: "6px", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                  <img src={game.image} alt={game.name} style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
-                  <div>
-                    <p style={{ fontSize: "13px", fontWeight: "600", marginBottom: "2px" }}>{game.name}</p>
-                    <p style={{ fontSize: "11px", color: "#555570" }}>{selected?.label}</p>
+              <div style={{ background: "#0d0d1c", border: "1px solid #1a1a2e", borderRadius: "6px", padding: "14px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: voucherData ? "10px" : "0" }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                    <img src={game.image} alt={game.name} style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px" }} />
+                    <div>
+                      <p style={{ fontSize: "13px", fontWeight: "600", marginBottom: "2px" }}>{game.name}</p>
+                      <p style={{ fontSize: "11px", color: "#555570" }}>{selected?.label}</p>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    {voucherData && <p style={{ fontSize: "12px", color: "#555570", textDecoration: "line-through", marginBottom: "2px" }}>Rp {selected?.price.toLocaleString("id-ID")}</p>}
+                    <p style={{ fontSize: "18px", fontWeight: "800", color: "#00e676" }}>Rp {finalPrice.toLocaleString("id-ID")}</p>
+                    <p style={{ fontSize: "11px", color: "#555570" }}>+62{whatsapp}</p>
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: "18px", fontWeight: "800", color: "#00e676" }}>Rp {selected?.price.toLocaleString("id-ID")}</p>
-                  <p style={{ fontSize: "11px", color: "#555570" }}>+62{whatsapp}</p>
-                </div>
+                {voucherData && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "10px", borderTop: "1px solid #1a1a2e" }}>
+                    <span style={{ fontSize: "12px" }}>🎟️</span>
+                    <span style={{ fontSize: "12px", color: "#00e676" }}>Voucher <strong>{voucherData.code}</strong> (-{voucherData.discount}%) — Hemat Rp {discountAmount.toLocaleString("id-ID")}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -364,9 +476,9 @@ export default function GamePage({ params }) {
                   <div style={{ background: "#0d0d1c", border: "1px solid rgba(0,230,118,0.2)", borderRadius: "6px", padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <p style={{ fontSize: "11px", color: "#555570", marginBottom: "4px" }}>Nominal Transfer</p>
-                      <p style={{ fontSize: "20px", fontWeight: "800", color: "#00e676", fontFamily: "monospace" }}>Rp {selected?.price.toLocaleString("id-ID")}</p>
+                      <p style={{ fontSize: "20px", fontWeight: "800", color: "#00e676", fontFamily: "monospace" }}>Rp {finalPrice.toLocaleString("id-ID")}</p>
                     </div>
-                    <button onClick={() => copyText(selected?.price.toString(), "amount")}
+                    <button onClick={() => copyText(finalPrice.toString(), "amount")}
                       style={{ background: copied === "amount" ? "#00e676" : "transparent", border: "1px solid #00e676", color: copied === "amount" ? "#000" : "#00e676", padding: "8px 16px", fontSize: "12px", cursor: "pointer", borderRadius: "4px", fontWeight: "600", transition: "all 0.2s", flexShrink: 0, minWidth: "80px" }}>
                       {copied === "amount" ? "✓ OK" : "Salin"}
                     </button>
@@ -389,9 +501,9 @@ export default function GamePage({ params }) {
                   <div style={{ background: "#0d0d1c", border: "1px solid rgba(0,230,118,0.2)", borderRadius: "6px", padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <p style={{ fontSize: "11px", color: "#555570", marginBottom: "4px" }}>Nominal Transfer</p>
-                      <p style={{ fontSize: "20px", fontWeight: "800", color: "#00e676", fontFamily: "monospace" }}>Rp {selected?.price.toLocaleString("id-ID")}</p>
+                      <p style={{ fontSize: "20px", fontWeight: "800", color: "#00e676", fontFamily: "monospace" }}>Rp {finalPrice.toLocaleString("id-ID")}</p>
                     </div>
-                    <button onClick={() => copyText(selected?.price.toString(), "amount")}
+                    <button onClick={() => copyText(finalPrice.toString(), "amount")}
                       style={{ background: copied === "amount" ? "#00e676" : "transparent", border: "1px solid #00e676", color: copied === "amount" ? "#000" : "#00e676", padding: "8px 16px", fontSize: "12px", cursor: "pointer", borderRadius: "4px", fontWeight: "600", transition: "all 0.2s", flexShrink: 0, minWidth: "80px" }}>
                       {copied === "amount" ? "✓ OK" : "Salin"}
                     </button>
@@ -428,16 +540,18 @@ export default function GamePage({ params }) {
               {selected ? (
                 <>
                   <p style={{ fontSize: "11px", color: "#555570", marginBottom: "2px" }}>Total Pembayaran</p>
-                  <p style={{ fontSize: "20px", fontWeight: "800", color: "#00e676", lineHeight: 1 }}>Rp {selected.price.toLocaleString("id-ID")}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    {voucherData && <p style={{ fontSize: "13px", color: "#555570", textDecoration: "line-through" }}>Rp {selected.price.toLocaleString("id-ID")}</p>}
+                    <p style={{ fontSize: "20px", fontWeight: "800", color: "#00e676", lineHeight: 1 }}>Rp {finalPrice.toLocaleString("id-ID")}</p>
+                    {voucherData && <span style={{ fontSize: "10px", color: "#00e676", background: "rgba(0,230,118,0.15)", padding: "1px 6px", borderRadius: "10px" }}>-{voucherData.discount}%</span>}
+                  </div>
                   <p style={{ fontSize: "11px", color: "#555570", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selected.label} · {selectedMethod || "Pilih metode dulu"}</p>
                 </>
               ) : (
                 <p style={{ fontSize: "13px", color: "#333355" }}>Lengkapi form untuk melanjutkan</p>
               )}
             </div>
-            <button
-              onClick={handleBayar}
-              disabled={confirming || !selected || !userId || !whatsapp || !selectedMethod}
+            <button onClick={handleBayar} disabled={confirming || !selected || !userId || !whatsapp || !selectedMethod}
               style={{ padding: "14px 24px", background: selected && userId && whatsapp && selectedMethod ? "#00e676" : "#111120", border: `1px solid ${selected && userId && whatsapp && selectedMethod ? "#00e676" : "#1a1a2e"}`, color: selected && userId && whatsapp && selectedMethod ? "#000" : "#333355", fontWeight: "700", fontSize: "13px", letterSpacing: "1px", textTransform: "uppercase", cursor: selected && userId && whatsapp && selectedMethod ? "pointer" : "not-allowed", borderRadius: "6px", transition: "all 0.2s", flexShrink: 0, opacity: confirming ? 0.7 : 1 }}>
               {confirming ? "Memproses..." : "Bayar Sekarang →"}
             </button>
@@ -452,7 +566,8 @@ export default function GamePage({ params }) {
             <div style={{ width: "72px", height: "72px", background: "rgba(0,230,118,0.12)", border: "2px solid #00e676", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: "28px" }}>✅</div>
             <h2 style={{ fontSize: "22px", fontWeight: "800", marginBottom: "8px" }}>Pembayaran Berhasil!</h2>
             <p style={{ color: "#555570", fontSize: "13px", marginBottom: "4px" }}>{selected?.label} untuk {game.name} berhasil diproses.</p>
-            <p style={{ color: "#555570", fontSize: "13px", marginBottom: "24px" }}>Konfirmasi dikirim ke WA +62{whatsapp}</p>
+            <p style={{ color: "#00e676", fontSize: "13px", marginBottom: "4px" }}>📱 Notifikasi WA dikirim ke +62{whatsapp}</p>
+            {voucherData && <p style={{ color: "#888899", fontSize: "12px", marginBottom: "16px" }}>🎟️ Voucher {voucherData.code} berhasil digunakan</p>}
             <div style={{ background: "#0a0a0f", border: "1px solid rgba(0,230,118,0.2)", borderRadius: "6px", padding: "14px", marginBottom: "24px" }}>
               <p style={{ fontSize: "10px", color: "#555570", marginBottom: "4px", letterSpacing: "2px" }}>ORDER ID</p>
               <p style={{ fontFamily: "monospace", color: "#00e676", fontSize: "18px", fontWeight: "700", letterSpacing: "3px" }}>{orderId}</p>
