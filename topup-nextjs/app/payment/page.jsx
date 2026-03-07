@@ -39,35 +39,18 @@ function PaymentContent() {
   const handleConfirm = async () => {
     if (!selectedMethod) { alert("Pilih metode dulu!"); return; }
     setConfirming(true);
-
     const id = "TG-" + Date.now().toString().slice(-8).toUpperCase();
-
     try {
       const res = await fetch("/api/midtrans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: id,
-          amount: price,
-          game: game,
-          userId: userId,
-          packageName: pkg,
-        }),
+        body: JSON.stringify({ orderId: id, amount: price, game, userId, packageName: pkg }),
       });
-
       const data = await res.json();
-
       if (data.token) {
         await supabase.from("order").insert([{
-          order_id: id,
-          game: game,
-          user_id: userId,
-          package: pkg,
-          price: price,
-          method: selectedMethod,
-          status: "pending"
+          order_id: id, game, user_id: userId, package: pkg, price, method: selectedMethod, status: "pending"
         }]);
-
         window.snap.pay(data.token, {
           onSuccess: async () => {
             await supabase.from("order").update({ status: "success" }).eq("order_id", id);
@@ -85,8 +68,6 @@ function PaymentContent() {
     setConfirming(false);
   };
 
-  const box = { background:"#111120", border:"1px solid #1a1a2e", clipPath:"polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%)", padding:"24px", marginBottom:"16px" };
-
   const methods = [
     { group: "QRIS", items: ["QRIS"] },
     { group: "E-Wallet", items: ["GoPay", "OVO", "DANA"] },
@@ -96,68 +77,68 @@ function PaymentContent() {
   return (
     <main style={{minHeight:"100vh",background:"#0a0a0f",backgroundImage:"linear-gradient(rgba(0,230,118,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px",color:"white",fontFamily:"sans-serif"}}>
 
-      <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 40px",borderBottom:"1px solid #1a1a2e"}}>
-        <div style={{fontSize:"22px",fontWeight:"800",letterSpacing:"4px",fontFamily:"monospace"}}>
+      <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",borderBottom:"1px solid #1a1a2e"}}>
+        <div style={{fontSize:"20px",fontWeight:"800",letterSpacing:"4px",fontFamily:"monospace"}}>
           TOPUP<span style={{color:"#00e676"}}>GAME</span>
         </div>
-        <nav style={{display:"flex",gap:"24px"}}>
-          <Link href="/" style={{color:"#555570",fontSize:"13px",textDecoration:"none"}}>Home</Link>
-        </nav>
+        <Link href="/" style={{color:"#555570",fontSize:"12px",textDecoration:"none"}}>Home</Link>
       </header>
 
-      <div style={{display:"flex",gap:"32px",padding:"40px",maxWidth:"1100px",margin:"0 auto"}}>
+      <div style={{padding:"20px",maxWidth:"1100px",margin:"0 auto"}}>
 
-        <div style={{width:"300px",flexShrink:0}}>
-          <div style={box}>
-            <p style={{fontSize:"11px",letterSpacing:"3px",textTransform:"uppercase",color:"#555570",marginBottom:"16px"}}>Detail Pesanan</p>
-            {[["Game",game],["User ID",userId],["Paket",pkg]].map(([label,val])=>(
-              <div key={label} style={{display:"flex",justifyContent:"space-between",marginBottom:"12px",fontSize:"13px"}}>
-                <span style={{color:"#555570"}}>{label}</span>
-                <strong style={{color:"white",textAlign:"right",maxWidth:"160px"}}>{val}</strong>
-              </div>
-            ))}
-            <div style={{borderTop:"1px solid #1a1a2e",marginTop:"12px",paddingTop:"12px",display:"flex",justifyContent:"space-between"}}>
-              <span style={{color:"#555570",fontSize:"13px"}}>Total Bayar</span>
-              <strong style={{color:"#00e676",fontSize:"16px"}}>Rp {price.toLocaleString("id-ID")}</strong>
-            </div>
-          </div>
-
-          <div style={{background:"#111120",border:"1px solid #1a1a2e",padding:"20px",textAlign:"center"}}>
-            <p style={{fontSize:"11px",letterSpacing:"2px",color:"#555570",marginBottom:"8px"}}>Selesaikan pembayaran dalam</p>
-            <p style={{fontSize:"32px",fontWeight:"800",fontFamily:"monospace",color: seconds < 60 ? "#ff4444" : "#00e676",letterSpacing:"4px"}}>{formatTime(seconds)}</p>
-          </div>
-        </div>
-
-        <div style={{flex:1}}>
-          <p style={{fontSize:"11px",letterSpacing:"3px",textTransform:"uppercase",color:"#555570",marginBottom:"16px"}}>Pilih Metode Pembayaran</p>
-
-          {methods.map(({ group, items }) => (
-            <div key={group}>
-              <p style={{fontSize:"11px",color:"#333355",letterSpacing:"2px",marginBottom:"8px"}}>{group}</p>
-              {items.map((m) => (
-                <div key={m} onClick={() => setSelectedMethod(m)} style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 16px",border: selectedMethod===m ? "1px solid #00e676" : "1px solid #1a1a2e",background: selectedMethod===m ? "rgba(0,230,118,0.05)" : "#111120",marginBottom:"8px",cursor:"pointer",transition:"all 0.2s"}}>
-                  <span style={{fontSize:"13px",flex:1}}>{m}</span>
-                  {selectedMethod===m && <span style={{color:"#00e676",fontSize:"12px"}}>✓</span>}
-                </div>
-              ))}
-              <div style={{marginBottom:"8px"}} />
+        {/* DETAIL ORDER */}
+        <div style={{background:"#111120",border:"1px solid #1a1a2e",padding:"16px",marginBottom:"16px"}}>
+          <p style={{fontSize:"11px",letterSpacing:"3px",textTransform:"uppercase",color:"#555570",marginBottom:"12px"}}>Detail Pesanan</p>
+          {[["Game",game],["User ID",userId],["Paket",pkg]].map(([label,val])=>(
+            <div key={label} style={{display:"flex",justifyContent:"space-between",marginBottom:"10px",fontSize:"13px"}}>
+              <span style={{color:"#555570"}}>{label}</span>
+              <strong style={{color:"white",textAlign:"right",maxWidth:"200px",wordBreak:"break-all"}}>{val}</strong>
             </div>
           ))}
-
-          <button onClick={handleConfirm} disabled={confirming} style={{width:"100%",padding:"16px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"14px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer",clipPath:"polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%)",opacity: confirming ? 0.7 : 1}}>
-            {confirming ? "Memproses..." : "Lanjut Bayar"}
-          </button>
+          <div style={{borderTop:"1px solid #1a1a2e",marginTop:"10px",paddingTop:"10px",display:"flex",justifyContent:"space-between"}}>
+            <span style={{color:"#555570",fontSize:"13px"}}>Total Bayar</span>
+            <strong style={{color:"#00e676",fontSize:"16px"}}>Rp {price.toLocaleString("id-ID")}</strong>
+          </div>
         </div>
+
+        {/* TIMER */}
+        <div style={{background:"#111120",border:"1px solid #1a1a2e",padding:"16px",marginBottom:"16px",textAlign:"center"}}>
+          <p style={{fontSize:"11px",letterSpacing:"2px",color:"#555570",marginBottom:"6px"}}>Selesaikan pembayaran dalam</p>
+          <p style={{fontSize:"36px",fontWeight:"800",fontFamily:"monospace",color: seconds < 60 ? "#ff4444" : "#00e676",letterSpacing:"4px"}}>{formatTime(seconds)}</p>
+        </div>
+
+        {/* METODE */}
+        <p style={{fontSize:"11px",letterSpacing:"3px",textTransform:"uppercase",color:"#555570",marginBottom:"12px"}}>Pilih Metode Pembayaran</p>
+
+        {methods.map(({ group, items }) => (
+          <div key={group} style={{marginBottom:"12px"}}>
+            <p style={{fontSize:"11px",color:"#333355",letterSpacing:"2px",marginBottom:"6px"}}>{group}</p>
+            {items.map((m) => (
+              <div key={m} onClick={() => setSelectedMethod(m)}
+                style={{display:"flex",alignItems:"center",gap:"12px",padding:"14px 16px",border: selectedMethod===m ? "1px solid #00e676" : "1px solid #1a1a2e",background: selectedMethod===m ? "rgba(0,230,118,0.05)" : "#111120",marginBottom:"8px",cursor:"pointer",transition:"all 0.2s"}}>
+                <span style={{fontSize:"14px",flex:1}}>{m}</span>
+                {selectedMethod===m && <span style={{color:"#00e676"}}>✓</span>}
+              </div>
+            ))}
+          </div>
+        ))}
+
+        <button onClick={handleConfirm} disabled={confirming}
+          style={{width:"100%",padding:"16px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"14px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer",marginTop:"8px",opacity: confirming ? 0.7 : 1}}>
+          {confirming ? "Memproses..." : "Lanjut Bayar"}
+        </button>
+
       </div>
 
       {success && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999}}>
-          <div style={{background:"#111120",border:"1px solid #00e676",clipPath:"polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%)",padding:"48px",textAlign:"center",maxWidth:"420px",width:"90%"}}>
-            <div style={{width:"64px",height:"64px",background:"#00e676",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 24px",fontSize:"28px",color:"#000",fontWeight:"700"}}>✓</div>
-            <h2 style={{fontSize:"24px",fontWeight:"700",letterSpacing:"2px",marginBottom:"12px"}}>Pembayaran Berhasil!</h2>
-            <p style={{color:"#555570",fontSize:"13px",marginBottom:"16px"}}>{pkg} untuk {game} berhasil!</p>
-            <div style={{background:"#0a0a0f",border:"1px solid #1a1a2e",padding:"12px",marginBottom:"24px",fontFamily:"monospace",letterSpacing:"2px",color:"#00e676"}}>Order ID: {orderId}</div>
-            <button onClick={() => router.push("/")} style={{width:"100%",padding:"14px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"13px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer",clipPath:"polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%)"}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:"20px"}}>
+          <div style={{background:"#111120",border:"1px solid #00e676",padding:"32px",textAlign:"center",width:"100%",maxWidth:"400px"}}>
+            <div style={{width:"56px",height:"56px",background:"#00e676",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",fontSize:"24px",color:"#000",fontWeight:"700"}}>✓</div>
+            <h2 style={{fontSize:"20px",fontWeight:"700",letterSpacing:"2px",marginBottom:"10px"}}>Pembayaran Berhasil!</h2>
+            <p style={{color:"#555570",fontSize:"13px",marginBottom:"14px"}}>{pkg} untuk {game} berhasil!</p>
+            <div style={{background:"#0a0a0f",border:"1px solid #1a1a2e",padding:"10px",marginBottom:"20px",fontFamily:"monospace",fontSize:"12px",letterSpacing:"2px",color:"#00e676",wordBreak:"break-all"}}>Order ID: {orderId}</div>
+            <button onClick={() => router.push("/")}
+              style={{width:"100%",padding:"14px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"13px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer"}}>
               Kembali ke Home
             </button>
           </div>
