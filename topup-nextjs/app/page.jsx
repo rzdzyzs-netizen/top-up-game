@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import games from "@/data/games.json";
+import articles from "@/data/articles.json";
 
 function SearchBar() {
   const [query, setQuery] = useState("");
@@ -63,16 +64,19 @@ export default function Home() {
   return (
     <main style={{minHeight:"100vh",background:"#0a0a0f",backgroundImage:"linear-gradient(rgba(0,230,118,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px",color:"white",fontFamily:"sans-serif"}}>
 
+      {/* HEADER */}
       <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 24px",borderBottom:"1px solid #1a1a2e",position:"sticky",top:0,background:"rgba(10,10,15,0.95)",backdropFilter:"blur(10px)",zIndex:100}}>
         <div style={{fontSize:"22px",fontWeight:"800",letterSpacing:"4px",fontFamily:"monospace"}}>
           AYSIEL<span style={{color:"#00e676"}}>TOPUP</span>
         </div>
         <nav style={{display:"flex",gap:"20px",alignItems:"center"}}>
-          <Link href="/" style={{color:"#555570",fontSize:"13px",textDecoration:"none",letterSpacing:"1px"}}>Home</Link>
+          <Link href="/" style={{color:"#00e676",fontSize:"13px",textDecoration:"none",letterSpacing:"1px"}}>Home</Link>
           <Link href="/cek-pesanan" style={{color:"#555570",fontSize:"13px",textDecoration:"none",letterSpacing:"1px"}}>Cek Pesanan</Link>
+          <Link href="/artikel" style={{color:"#555570",fontSize:"13px",textDecoration:"none",letterSpacing:"1px"}}>Artikel</Link>
         </nav>
       </header>
 
+      {/* HERO */}
       <div style={{textAlign:"center",padding:"60px 24px 40px",borderBottom:"1px solid #1a1a2e"}}>
         <p style={{fontSize:"11px",letterSpacing:"4px",color:"#00e676",textTransform:"uppercase",marginBottom:"16px"}}>Platform Top Up Terpercaya</p>
         <h1 style={{fontSize:"clamp(28px,5vw,52px)",fontWeight:"800",lineHeight:"1.1",marginBottom:"16px"}}>
@@ -91,6 +95,7 @@ export default function Home() {
         <SearchBar />
       </div>
 
+      {/* GAME LIST */}
       <div style={{maxWidth:"1200px",margin:"0 auto",padding:"40px 24px"}}>
         <p style={{fontSize:"11px",letterSpacing:"4px",color:"#555570",textTransform:"uppercase",marginBottom:"24px",textAlign:"center"}}>Pilih Game</p>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:"16px"}}>
@@ -113,6 +118,30 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ARTIKEL SECTION */}
+      <div style={{maxWidth:"1200px",margin:"0 auto",padding:"0 24px 40px"}}>
+        <div style={{borderTop:"1px solid #1a1a2e",paddingTop:"32px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"20px"}}>
+            <p style={{fontSize:"11px",letterSpacing:"3px",color:"#555570",textTransform:"uppercase"}}>Artikel & Tips</p>
+            <Link href="/artikel" style={{fontSize:"11px",color:"#00e676",textDecoration:"none",letterSpacing:"1px"}}>Lihat Semua →</Link>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"12px"}}>
+            {articles.slice(0,3).map(a => (
+              <Link key={a.slug} href={`/artikel/${a.slug}`} style={{textDecoration:"none",color:"white"}}>
+                <div style={{background:"#111120",border:"1px solid #1a1a2e",padding:"16px",transition:"all 0.2s"}}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor="#00e676"}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor="#1a1a2e"}>
+                  <span style={{fontSize:"10px",color:"#00e676",background:"rgba(0,230,118,0.1)",padding:"2px 8px",letterSpacing:"1px",display:"inline-block",marginBottom:"10px"}}>{a.category}</span>
+                  <p style={{fontSize:"13px",fontWeight:"700",lineHeight:"1.4",marginBottom:"8px"}}>{a.title}</p>
+                  <p style={{fontSize:"11px",color:"#555570",lineHeight:"1.5"}}>{a.excerpt.slice(0,80)}...</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* FOOTER */}
       <footer style={{borderTop:"1px solid #1a1a2e",padding:"24px",textAlign:"center",color:"#333355",fontSize:"12px",letterSpacing:"2px"}}>
         © 2026 AYSIELTOPUP — ALL RIGHTS RESERVED
       </footer>
