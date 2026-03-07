@@ -3,7 +3,7 @@
     "slug": "genshin",
     "name": "Genshin Impact",
     "publisher": "HoYoverse",
-    "image": "/images/genshin.jpg",
+    "image": "/images/genshin.png",
     "currency": "Genesis Crystal",
     "nominals": [
       { "label": "60 Genesis Crystal", "price": 14000 },
@@ -21,7 +21,7 @@
     "slug": "roblox",
     "name": "Roblox",
     "publisher": "Roblox Corporation",
-    "image": "/images/roblox.jpg",
+    "image": "/images/roblox.png",
     "currency": "Robux",
     "nominals": [
       { "label": "80 Robux", "price": 16000 },
@@ -39,7 +39,7 @@
     "slug": "pb",
     "name": "Point Blank",
     "publisher": "Zepetto",
-    "image": "/images/pb.jpg",
+    "image": "/images/pb.png",
     "currency": "ZCash",
     "nominals": [
       { "label": "50 ZCash", "price": 10000 },
@@ -55,7 +55,7 @@
     "slug": "deltaforce",
     "name": "Delta Force",
     "publisher": "TiMi Studio",
-    "image": "/images/deltaforce.jpg",
+    "image": "/images/deltaforce.png",
     "currency": "DF Coin",
     "nominals": [
       { "label": "60 DF Coin", "price": 15000 },
@@ -70,7 +70,7 @@
     "slug": "ml",
     "name": "Mobile Legends",
     "publisher": "Moonton",
-    "image": "/images/ml.jpg",
+    "image": "/images/ml.png",
     "currency": "Diamond",
     "nominals": [
       { "label": "11 Diamond", "price": 4000 },
@@ -112,7 +112,7 @@
     "slug": "pubg",
     "name": "PUBG Mobile",
     "publisher": "Krafton",
-    "image": "/images/pubg.jpg",
+    "image": "/images/pubg.png",
     "currency": "UC",
     "nominals": [
       { "label": "60 UC", "price": 14000 },
