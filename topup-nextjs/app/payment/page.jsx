@@ -1,11 +1,11 @@
 "use client";
 import { supabase } from "@/lib/supabase";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function PaymentPage() {
+function PaymentContent() {
   const params = useSearchParams();
   const router = useRouter();
 
@@ -107,7 +107,6 @@ export default function PaymentPage() {
 
       <div style={{display:"flex",gap:"32px",padding:"40px",maxWidth:"1100px",margin:"0 auto"}}>
 
-        {/* KIRI */}
         <div style={{width:"300px",flexShrink:0}}>
           <div style={box}>
             <p style={{fontSize:"11px",letterSpacing:"3px",textTransform:"uppercase",color:"#555570",marginBottom:"16px"}}>Detail Pesanan</p>
@@ -129,7 +128,6 @@ export default function PaymentPage() {
           </div>
         </div>
 
-        {/* KANAN */}
         <div style={{flex:1}}>
           <p style={{fontSize:"11px",letterSpacing:"3px",textTransform:"uppercase",color:"#555570",marginBottom:"16px"}}>Pilih Metode Pembayaran</p>
 
@@ -146,17 +144,12 @@ export default function PaymentPage() {
             </div>
           ))}
 
-          <button
-            onClick={handleConfirm}
-            disabled={confirming}
-            style={{width:"100%",padding:"16px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"14px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer",clipPath:"polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%)",opacity: confirming ? 0.7 : 1}}
-          >
+          <button onClick={handleConfirm} disabled={confirming} style={{width:"100%",padding:"16px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"14px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer",clipPath:"polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%)",opacity: confirming ? 0.7 : 1}}>
             {confirming ? "Memproses..." : "Lanjut Bayar"}
           </button>
         </div>
       </div>
 
-      {/* MODAL SUKSES */}
       {success && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999}}>
           <div style={{background:"#111120",border:"1px solid #00e676",clipPath:"polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%)",padding:"48px",textAlign:"center",maxWidth:"420px",width:"90%"}}>
@@ -171,5 +164,13 @@ export default function PaymentPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:"100vh",background:"#0a0a0f",display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}>Loading...</div>}>
+      <PaymentContent />
+    </Suspense>
   );
 }
