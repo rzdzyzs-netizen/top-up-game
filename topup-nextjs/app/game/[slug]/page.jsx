@@ -11,9 +11,10 @@ export default function GamePage({ params }) {
   const router = useRouter();
 
   const [userId, setUserId] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [selected, setSelected] = useState(null);
   const [selectedMethod, setSelectedMethod] = useState(null);
-  const [step, setStep] = useState(1); // 1=order, 2=instruksi bayar
+  const [step, setStep] = useState(1);
   const [confirming, setConfirming] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
@@ -31,6 +32,7 @@ export default function GamePage({ params }) {
 
   const handleBayar = async () => {
     if (!userId) { alert("Masukkan User ID dulu!"); return; }
+    if (!whatsapp) { alert("Masukkan nomor WhatsApp dulu!"); return; }
     if (!selected) { alert("Pilih paket dulu!"); return; }
     if (!selectedMethod) { alert("Pilih metode pembayaran dulu!"); return; }
     setConfirming(true);
@@ -48,7 +50,7 @@ export default function GamePage({ params }) {
       if (data.token) {
         await supabase.from("order").insert([{
           order_id: id, game: game.name, user_id: userId, package: selected.label,
-          price: selected.price, method: selectedMethod, status: "pending"
+          price: selected.price, method: selectedMethod, status: "pending", whatsapp
         }]);
 
         window.snap.pay(data.token, {
@@ -91,6 +93,7 @@ export default function GamePage({ params }) {
   ];
 
   const box = { background:"#111120", border:"1px solid #1a1a2e", padding:"16px", marginBottom:"12px" };
+  const inputStyle = { width:"100%", background:"#0a0a0f", border:"1px solid #1a1a2e", color:"white", padding:"12px 14px", fontSize:"14px", outline:"none", boxSizing:"border-box", fontFamily:"sans-serif" };
 
   return (
     <main style={{minHeight:"100vh",background:"#0a0a0f",backgroundImage:"linear-gradient(rgba(0,230,118,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,0.03) 1px,transparent 1px)",backgroundSize:"40px 40px",color:"white",fontFamily:"sans-serif"}}>
@@ -122,18 +125,29 @@ export default function GamePage({ params }) {
               </div>
             </div>
 
-            {/* USER ID */}
+            {/* USER ID + WHATSAPP */}
             <div style={box}>
               <p style={{fontSize:"11px",letterSpacing:"2px",textTransform:"uppercase",marginBottom:"10px"}}>
-                <span style={{color:"#00e676",marginRight:"8px"}}>1</span>Masukkan User ID
+                <span style={{color:"#00e676",marginRight:"8px"}}>1</span>Data Kamu
               </p>
               <input
                 type="text"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder={`User ID ${game.name}`}
-                style={{width:"100%",background:"#0a0a0f",border:"1px solid #1a1a2e",color:"white",padding:"12px 14px",fontSize:"14px",outline:"none",boxSizing:"border-box",fontFamily:"sans-serif"}}
+                style={{...inputStyle, marginBottom:"10px"}}
               />
+              <div style={{position:"relative"}}>
+                <span style={{position:"absolute",left:"14px",top:"50%",transform:"translateY(-50%)",fontSize:"14px",color:"#555570",pointerEvents:"none"}}>+62</span>
+                <input
+                  type="tel"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="Nomor WhatsApp (contoh: 8123456789)"
+                  style={{...inputStyle, paddingLeft:"48px"}}
+                />
+              </div>
+              <p style={{fontSize:"11px",color:"#555570",marginTop:"6px"}}>📱 Nomor WA untuk konfirmasi pesanan</p>
             </div>
 
             {/* PILIH PAKET */}
@@ -185,7 +199,7 @@ export default function GamePage({ params }) {
               ))}
             </div>
 
-            {/* TOTAL + BAYAR */}
+            {/* TOTAL */}
             {selected && (
               <div style={{background:"#111120",border:"1px solid #00e676",padding:"16px",marginBottom:"12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
@@ -196,7 +210,7 @@ export default function GamePage({ params }) {
               </div>
             )}
 
-            <button onClick={handleBayar} disabled={confirming} style={{width:"100%",padding:"16px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"14px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer",opacity: confirming?0.7:1}}>
+            <button onClick={handleBayar} disabled={confirming} style={{width:"100%",padding:"16px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"14px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer",opacity:confirming?0.7:1}}>
               {confirming ? "Memproses..." : "Bayar Sekarang"}
             </button>
           </>
@@ -211,10 +225,12 @@ export default function GamePage({ params }) {
                 <span style={{fontSize:"11px",color:"#ffaa00",background:"rgba(255,170,0,0.1)",border:"1px solid rgba(255,170,0,0.3)",padding:"4px 12px"}}>MENUNGGU</span>
               </div>
 
+              {/* ORDER SUMMARY */}
               <div style={{background:"#0a0a0f",border:"1px solid #1a1a2e",padding:"12px",marginBottom:"12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
                   <p style={{fontSize:"11px",color:"#555570",marginBottom:"3px"}}>Order</p>
                   <p style={{fontSize:"13px",fontWeight:"600"}}>{game.name} — {selected?.label}</p>
+                  <p style={{fontSize:"11px",color:"#555570"}}>WA: +62{whatsapp}</p>
                 </div>
                 <div style={{textAlign:"right"}}>
                   <p style={{fontSize:"11px",color:"#555570",marginBottom:"3px"}}>Total</p>
@@ -243,7 +259,7 @@ export default function GamePage({ params }) {
                   </div>
                   <div style={{background:"#0a0a0f",border:"1px solid #1a1a2e",padding:"14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div>
-                      <p style={{fontSize:"11px",color:"#555570",marginBottom:"3px"}}>Nominal</p>
+                      <p style={{fontSize:"11px",color:"#555570",marginBottom:"3px"}}>Nominal Transfer</p>
                       <p style={{fontSize:"20px",fontWeight:"700",color:"#00e676"}}>Rp {selected?.price.toLocaleString("id-ID")}</p>
                     </div>
                     <button onClick={()=>copyText(selected?.price.toString())} style={{background:"transparent",border:"1px solid #00e676",color:"#00e676",padding:"8px 14px",fontSize:"12px",cursor:"pointer"}}>Salin</button>
@@ -262,7 +278,7 @@ export default function GamePage({ params }) {
                   </div>
                   <div style={{background:"#0a0a0f",border:"1px solid #1a1a2e",padding:"14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div>
-                      <p style={{fontSize:"11px",color:"#555570",marginBottom:"3px"}}>Nominal</p>
+                      <p style={{fontSize:"11px",color:"#555570",marginBottom:"3px"}}>Nominal Transfer</p>
                       <p style={{fontSize:"20px",fontWeight:"700",color:"#00e676"}}>Rp {selected?.price.toLocaleString("id-ID")}</p>
                     </div>
                     <button onClick={()=>copyText(selected?.price.toString())} style={{background:"transparent",border:"1px solid #00e676",color:"#00e676",padding:"8px 14px",fontSize:"12px",cursor:"pointer"}}>Salin</button>
@@ -288,7 +304,8 @@ export default function GamePage({ params }) {
           <div style={{background:"#111120",border:"1px solid #00e676",padding:"40px",textAlign:"center",maxWidth:"400px",width:"100%"}}>
             <div style={{width:"60px",height:"60px",background:"#00e676",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",fontSize:"26px",color:"#000",fontWeight:"700"}}>✓</div>
             <h2 style={{fontSize:"22px",fontWeight:"700",marginBottom:"10px"}}>Pembayaran Berhasil!</h2>
-            <p style={{color:"#555570",fontSize:"13px",marginBottom:"16px"}}>{selected?.label} untuk {game.name} berhasil!</p>
+            <p style={{color:"#555570",fontSize:"13px",marginBottom:"4px"}}>{selected?.label} untuk {game.name} berhasil!</p>
+            <p style={{color:"#555570",fontSize:"13px",marginBottom:"16px"}}>Konfirmasi akan dikirim ke WA +62{whatsapp}</p>
             <div style={{background:"#0a0a0f",border:"1px solid #1a1a2e",padding:"12px",marginBottom:"20px",fontFamily:"monospace",color:"#00e676",fontSize:"13px"}}>Order ID: {orderId}</div>
             <button onClick={()=>router.push("/")} style={{width:"100%",padding:"14px",background:"#00e676",border:"none",color:"#000",fontWeight:"700",fontSize:"13px",letterSpacing:"3px",textTransform:"uppercase",cursor:"pointer"}}>
               Kembali ke Home
